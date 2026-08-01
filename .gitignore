@@ -1,0 +1,16 @@
+# State and logs
+state/
+events/
+logs/
+*.log
+
+# Environment / secrets
+.env
+*.session
+
+# Python
+__pycache__/
+*.pyc
+
+# Knowledge cache
+knowledge/*.tmp
