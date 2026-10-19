@@ -183,9 +183,30 @@ def learning_allowed(db):
     return count < LEARNING_DAILY_CAP
 
 
+def quiet_hours_active(hour, start, end):
+    """True when `hour` falls inside the quiet window.
+
+    start<end  -> same-day window, active on start <= hour < end
+    start>end  -> window crossing midnight, active on hour >= start or hour < end
+    start==end -> active all day (fail closed)
+    invalid bounds -> active all day (fail closed)
+    """
+    try:
+        h, s, e = int(hour), int(start), int(end)
+    except (TypeError, ValueError):
+        return True
+    if not (0 <= h <= 23 and 0 <= s <= 23 and 0 <= e <= 23):
+        return True
+    if s == e:
+        return True
+    if s < e:
+        return s <= h < e
+    return h >= s or h < e
+
+
 def rate_allowed(db, chat_id):
     local = datetime.now(LOCAL_TZ)
-    if local.hour >= QUIET_START or local.hour < QUIET_END:
+    if quiet_hours_active(local.hour, QUIET_START, QUIET_END):
         return False, "quiet_hours"
     today = local.date().isoformat()
     row = db.execute("SELECT last_sent_at,sent_day,sent_today FROM group_state WHERE chat_id=?", (chat_id,)).fetchone()
